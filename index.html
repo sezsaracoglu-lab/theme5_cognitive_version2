@@ -793,6 +793,138 @@ document.getElementById('dvnBtn').onclick=function(){if(running){clearInterval(r
 })();
 </script>
 
+<style>
+#p-vz .vnav{display:none!important}
+#p-vz .vz-step{display:none}
+#p-vz .vz-step.on{display:block;animation:vzfade .25s ease}
+@keyframes vzfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#p-vz .vz-bar{position:sticky;top:0;z-index:30;background:var(--bg,#faf7f1);padding:10px 0 8px;margin:12px 0 4px;border-bottom:1px solid var(--line,#e8e1d3)}
+#p-vz .vz-pills{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;padding-bottom:4px}
+#p-vz .vz-pill{flex:0 0 auto;border:1px solid var(--line,#e8e1d3);background:#fff;border-radius:999px;padding:5px 12px;font:inherit;font-size:.82rem;color:var(--navy,#34466b);cursor:pointer;white-space:nowrap}
+#p-vz .vz-pill.blk{font-weight:700;background:#f6eedd;border-color:#c9a96e}
+#p-vz .vz-pill.seen{background:#e2f1e6;border-color:#b9dcc6}
+#p-vz .vz-pill.on{background:var(--navy,#34466b);color:#fff;border-color:var(--navy,#34466b)}
+#p-vz .vz-prog{height:6px;background:#efe7d6;border-radius:6px;overflow:hidden;margin-top:6px}
+#p-vz .vz-prog i{display:block;height:100%;background:linear-gradient(90deg,#c9a96e,#a8854a);width:0;transition:width .3s}
+#p-vz .vz-where{font-size:.78rem;color:var(--muted,#6b7280);margin-top:4px}
+#p-vz .vz-chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 6px;padding-top:12px;border-top:1px dashed var(--line,#e8e1d3)}
+#p-vz .vz-chips .lab{width:100%;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted,#6b7280);font-weight:700}
+#p-vz .vz-chip{border:1px solid var(--line,#e8e1d3);background:#fff;color:var(--navy,#34466b);border-radius:999px;padding:8px 15px;font:inherit;font-size:.9rem;font-weight:600;cursor:pointer}
+#p-vz .vz-chip:hover{border-color:#c9a96e;background:#f6eedd}
+#p-vz .vz-chip.on{background:#c9a96e;border-color:#c9a96e;color:#fff}
+#p-vz .vz-drawer{display:none}
+#p-vz .vz-drawer.on{display:block;animation:vzfade .2s ease}
+#p-vz .vz-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:22px 0 4px;padding:12px 0;border-top:1px solid var(--line,#e8e1d3);position:sticky;bottom:0;background:var(--bg,#faf7f1);z-index:25}
+#p-vz .vz-foot button{border:1px solid var(--navy,#34466b);background:#fff;color:var(--navy,#34466b);border-radius:12px;padding:10px 16px;font:inherit;font-weight:700;cursor:pointer;max-width:46%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#p-vz .vz-foot button.next{background:var(--navy,#34466b);color:#fff}
+#p-vz .vz-foot button:disabled{opacity:.35;cursor:default}
+#p-vz .vz-foot span{font-size:.82rem;color:var(--muted,#6b7280);white-space:nowrap}
+#p-vz .vz-step .vlec{margin-top:10px}
+#p-vz .vz-step .vblock{margin:10px 0}
+#p-vz .vz-hint{font-size:.8rem;color:var(--muted,#6b7280);text-align:center;margin-top:4px}
+@media (max-width:900px){#p-vz .vblock{padding:14px 16px}#p-vz .vblock h2{font-size:1.3rem}#p-vz .vblock p{font-size:.9rem}#p-vz .vlec h2{font-size:1.35rem}#p-vz .vlec-h{gap:10px}#p-vz .vnum{width:52px;height:52px}#p-vz .vz-bar{position:static}#p-vz .vz-foot button{padding:9px 12px;font-size:.88rem}#p-vz .vz-foot span{display:none}}
+</style>
+<script>
+(function(){
+var P=document.getElementById('p-vz');if(!P||P.dataset.vzStep)return;P.dataset.vzStep='1';
+var page=P.querySelector('.vpage');if(!page)return;
+var kids=[].slice.call(page.children);
+var hero=page.querySelector('.vhero'),nav=page.querySelector('.vnav');
+/* ---------- build steps ---------- */
+var steps=[],pendingBlock=null;
+kids.forEach(function(k){
+ if(k===hero||k===nav||k.tagName==='SCRIPT'||k.tagName==='STYLE')return;
+ if(k.classList.contains('vblock')){pendingBlock=k;return}
+ if(k.classList.contains('vsec')||k.classList.contains('vlec')){
+  var w=document.createElement('div');w.className='vz-step';
+  var label,blk=false,em='';
+  var h=k.querySelector('h2');var t=h?h.textContent.trim():'Section';
+  if(k.classList.contains('vlec')){var n=k.querySelector('.vnum');var num=n?n.textContent.replace(/[^A-Z0-9.]/g,'').replace(/^\.+/,''):'';label=num||t;}
+  else{var id=k.id||'';label=/map$/.test(id)?'🗺️ Map':/time$/.test(id)?'⏳ Timeline':/synth$/.test(id)?'🧵 Synthesis':/one$/.test(id)?'📄 One page':t.split(/[:(]/)[0];}
+  if(pendingBlock){w.appendChild(pendingBlock);blk=true;}
+  page.insertBefore(w,k);w.appendChild(k);
+  steps.push({el:w,label:label,title:t,blockStart:blk,blockName:pendingBlock?(pendingBlock.querySelector('h2')||{}).textContent:'',isLec:k.classList.contains('vlec')});
+  pendingBlock=null;
+ }
+});
+if(!steps.length)return;
+/* hero goes on the first step only */
+if(hero){steps[0].el.insertBefore(hero,steps[0].el.firstChild);}
+/* ---------- chips inside lectures ---------- */
+function chipLabel(n){
+ var c=n.classList;
+ if(c.contains('vdemo')){var l=n.querySelector('.lbl');var lt=l?l.textContent:'';var h4=n.querySelector('h4');var ht=h4?h4.textContent.trim():'Try it';
+   if(/REAL DATA/i.test(lt))return '📊 '+ht.replace(/^[^\w"']+/,'');
+   return '🎮 '+ht.replace(/^[^\w"'(]+/,'');}
+ if(c.contains('vana'))return '🧠 Think of it like…';
+ if(c.contains('vtrap'))return '⚠️ The trap';
+ if(c.contains('vtrio'))return '💬 Friend · 🔑 Hook · ✎ Tip';
+ if(c.contains('vwatch'))return '▶ Videos & links';
+ if(n.tagName==='DETAILS')return '✅ Quick check';
+ if(c.contains('vcall'))return '★ Key idea';
+ if(c.contains('cards2'))return '⚖️ Side by side';
+ if(c.contains('tblw')||n.querySelector&&n.querySelector('table'))return '📋 Comparison table';
+ if(n.tagName==='FIGURE'||c.contains('vfig')){var fc=n.querySelector('figcaption');var tx=fc?fc.textContent:'';var m=tx.match(/^Figure\s+([A-Z]?\.?\d*[a-z]?)/);var svgT=n.querySelector('svg .t-h');var name=svgT?svgT.textContent:(tx.replace(/^Figure[^.]*\.\s*/,'').split(/[.:(]/)[0]);name=name.length>38?name.slice(0,36)+'…':name;return (/real data/i.test(tx)?'📊 ':'🖼️ ')+name;}
+ if(n.tagName==='P')return 'ℹ️ More';
+ return '➕ More';
+}
+steps.forEach(function(s){
+ if(!s.isLec)return;
+ var art=s.el.querySelector('.vlec');if(!art)return;
+ var ch=[].slice.call(art.children);
+ var keep=[],rest=[];var heroFound=false;
+ var hasGrid=ch.some(function(n){return n.classList&&n.classList.contains('vgrid')});
+ ch.forEach(function(n){
+  if(n.classList.contains('vlec-h')||n.classList.contains('vq')){keep.push(n);return}
+  if(!heroFound&&((hasGrid&&n.classList.contains('vgrid'))||(!hasGrid&&(n.tagName==='FIGURE'||n.classList.contains('vdemo')||n.classList.contains('cards2'))))){heroFound=true;keep.push(n);return}
+  rest.push(n);
+ });
+ if(!rest.length)return;
+ /* merge consecutive details into one drawer */
+ var groups=[];rest.forEach(function(n){var last=groups[groups.length-1];if(n.tagName==='DETAILS'&&last&&last.type==='DETAILS'){last.nodes.push(n)}else groups.push({type:n.tagName,nodes:[n]})});
+ var bar=document.createElement('div');bar.className='vz-chips';bar.innerHTML='<span class="lab">Tap to open · '+groups.length+' more on this screen</span>';
+ var holder=document.createElement('div');
+ groups.forEach(function(g,i){
+  var d=document.createElement('div');d.className='vz-drawer';g.nodes.forEach(function(n){d.appendChild(n)});
+  if(g.type==='DETAILS'){g.nodes.forEach(function(n){n.open=true});}
+  var b=document.createElement('button');b.type='button';b.className='vz-chip';var lab=chipLabel(g.nodes[0]);if(g.type==='DETAILS'&&g.nodes.length>1)lab='✅ Quick checks ('+g.nodes.length+')';b.textContent=lab;
+  b.onclick=function(){var on=!d.classList.contains('on');bar.querySelectorAll('.vz-chip').forEach(function(x){x.classList.remove('on')});holder.querySelectorAll('.vz-drawer').forEach(function(x){x.classList.remove('on')});d.classList.toggle('on',on);b.classList.toggle('on',on);if(on){setTimeout(function(){var r=d.getBoundingClientRect();if(r.top>window.innerHeight*.75||r.top<0)d.scrollIntoView({behavior:'smooth',block:'start'})},30)}};
+  bar.appendChild(b);holder.appendChild(d);
+ });
+ art.appendChild(bar);art.appendChild(holder);
+});
+/* ---------- top bar + footer ---------- */
+var top=document.createElement('div');top.className='vz-bar';
+var pills=document.createElement('div');pills.className='vz-pills';
+var prog=document.createElement('div');prog.className='vz-prog';prog.innerHTML='<i></i>';
+var where=document.createElement('div');where.className='vz-where';
+top.appendChild(pills);top.appendChild(prog);top.appendChild(where);
+page.insertBefore(top,steps[0].el);
+var seen={};var cur=0;
+steps.forEach(function(s,i){var b=document.createElement('button');b.type='button';b.className='vz-pill'+(s.blockStart?' blk':'');b.textContent=(s.blockStart&&s.isLec?'▸ ':'')+s.label;b.title=s.title;b.onclick=function(){go(i)};pills.appendChild(b);s.pill=b});
+var foot=document.createElement('div');foot.className='vz-foot';
+var prev=document.createElement('button');prev.type='button';var nxt=document.createElement('button');nxt.type='button';nxt.className='next';var mid=document.createElement('span');
+foot.appendChild(prev);foot.appendChild(mid);foot.appendChild(nxt);
+page.appendChild(foot);
+var hint=document.createElement('div');hint.className='vz-hint';hint.textContent='Tip: use ← → arrow keys to move between screens.';page.appendChild(hint);
+prev.onclick=function(){go(cur-1)};nxt.onclick=function(){go(cur+1)};
+function short(t){return t.length>34?t.slice(0,32)+'…':t}
+function go(i,noScroll){if(i<0||i>=steps.length)return;cur=i;steps.forEach(function(s,j){s.el.classList.toggle('on',j===i);s.pill.classList.toggle('on',j===i)});seen[i]=1;steps.forEach(function(s,j){s.pill.classList.toggle('seen',!!seen[j]&&j!==i)});
+ prog.firstChild.style.width=Math.round((i+1)/steps.length*100)+'%';
+ where.textContent='Screen '+(i+1)+' of '+steps.length+' · '+steps[i].title;
+ prev.disabled=i===0;nxt.disabled=i===steps.length-1;
+ prev.textContent='← '+(i>0?short(steps[i-1].label):'Back');nxt.textContent=(i<steps.length-1?short(steps[i+1].label+(steps[i+1].isLec?' · '+steps[i+1].title.split(/[:,]/)[0]:'')):'Done')+' →';
+ mid.textContent=(i+1)+' / '+steps.length;
+ steps[i].pill.scrollIntoView({block:'nearest',inline:'center'});
+ try{localStorage.setItem('vzStep:'+location.pathname,i)}catch(e){}
+ if(!noScroll){var r=P.getBoundingClientRect();window.scrollTo({top:window.scrollY+r.top-10,behavior:'smooth'})}}
+/* jump links (map boxes, data-go) go to the right screen */
+P.addEventListener('click',function(e){var g=e.target.closest&&e.target.closest('[data-go]');if(!g||!P.contains(g))return;var id=g.getAttribute('data-go');var t=document.getElementById(id);if(!t)return;for(var i=0;i<steps.length;i++){if(steps[i].el.contains(t)){e.stopImmediatePropagation();e.preventDefault();go(i);return}}},true);
+document.addEventListener('keydown',function(e){if(!P.classList.contains('on'))return;var tg=e.target.tagName;if(tg==='INPUT'||tg==='TEXTAREA'||tg==='SELECT')return;if(e.key==='ArrowRight')go(cur+1);else if(e.key==='ArrowLeft')go(cur-1)});
+var start=0;try{var sv=+localStorage.getItem('vzStep:'+location.pathname);if(sv>=0&&sv<steps.length)start=sv}catch(e){}
+go(start,true);
+})();
+</script>
 </section>
 </main></div>
 <script>const TIMELINE=[["1880s", "Wundt", "Imagery central to early psychology."], ["1913\u201360", "Watson & behaviourism", "Imagery rejected; only 34 articles in the 1950s."], ["1968", "Brooks", "Selective interference: visual vs verbal codes."], ["1969\u201371", "Paivio", "Dual-code theory."], ["1970", "Segal & Fusella \u00b7 Shepard & Chipman", "Modality-specific interference \u00b7 shapes of states."], ["1971", "Shepard & Metzler", "Mental rotation: RT linear with angle."], ["1972", "Clark & Chase", "Pictures and sentences stored as propositions."], ["1973", "Pylyshyn \u00b7 Anderson & Bower", "Propositional theory."], ["1974", "Reed", "Star of David: 14% find the parallelogram."], ["1975\u201376", "Kosslyn", "Image scaling; imagery vs propositions in children."], ["1978", "Kosslyn, Ball & Reiser \u00b7 Paivio", "Island scanning \u00b7 mental clocks."], ["1985", "Jolicoeur & Kosslyn", "Experimenter expectancy ruled out."], ["1986", "McDaniel & Einstein", "Bizarreness effect with imagery instructions."], ["1994", "Anderson & Buyer", "Imagery ability doesn\u2019t predict the effect."], ["1999", "Mast et al. \u00b7 Peru & Zapparoli", "Imagined lines distort perception \u00b7 representational neglect."], ["2001", "Kosslyn et al.", "Motor cortex in rotation after hand rotation."], ["2002", "Zwaan et al.", "Sentence-implied shape speeds picture verification."], ["2008", "Borst & Kosslyn", "Scanning seen vs imagined dots: same linear RT."], ["2021", "Besken & Mulligan", "Visuospatial distraction doesn\u2019t reduce the bizarreness effect."]];const CARDS=[["Theories", "Mental imagery", "Mental representation of things not currently seen or sensed (Moulton & Kosslyn, 2009)."], ["Theories", "Dual-code theory", "Paivio: knowledge stored in two codes, imaginal (analog) and verbal (symbolic)."], ["Theories", "Analog code", "Resembles what it represents, preserving physical relations (like clock hands)."], ["Theories", "Symbolic code", "Arbitrary; doesn\u2019t resemble what it stands for (digital clock, \u20189\u2019, words)."], ["Theories", "Propositional theory", "Anderson & Bower; Pylyshyn: all knowledge stored as abstract propositions (\u2018mentalese\u2019)."], ["Theories", "Epiphenomenon", "A by-product of more basic processes: what images are, according to propositional theory."], ["Theories", "Proposition", "The meaning underlying a relationship among concepts, e.g. Bite(mouse, cat)."], ["Theories", "Predicate calculus", "Shorthand [relation](subject, object); not the literal mental code."], ["Theories", "Clark & Chase (1972)", "Pictures and sentences are both stored as propositions; image or words re-created at retrieval."], ["Theories", "Imagery debate", "Analog code (Kosslyn, majority) vs propositional code (Pylyshyn) for images."], ["Theories", "Functional-equivalence hypothesis", "We use mental images the same way we use percepts."], ["Theories", "Talasli (1990)", "People can use both kinds of representation to improve performance."], ["Evidence", "Paivio (1969)", "Pictures recalled better in free order; word sequences better than picture sequences \u2192 two systems."], ["Evidence", "Concrete vs abstract words", "Concrete words (book, hat) recalled better: they get an extra image code."], ["Evidence", "Brooks (1968)", "Visual task slowed by pointing; verbal task by speaking \u2192 two codes."], ["Evidence", "Kosslyn: >90%", "More than 90% of the same brain areas active when classifying seen vs imagined object parts."], ["Evidence", "When is early visual cortex active in imagery?", "High-resolution tasks; not purely spatial ones; more likely with stronger scanners."], ["Evidence", "Kosslyn (1975) scaling", "Rabbit beside an elephant (small image) \u2192 slower answers than beside a fly."], ["Evidence", "Kosslyn (1976) children", "Imagery: faster for big parts; no imagery: faster for distinctive parts; 1st-graders image anyway."], ["Evidence", "Kosslyn, Ball & Reiser (1978)", "Scanning an imagined island: time increases linearly with distance."], ["Evidence", "Borst & Kosslyn (2008)", "Dots + arrow, seen or imagined: same linear distance effect."], ["Evidence", "Pinker (1980)", "Scanning a 3-D array of toys in a box: same pattern."], ["Evidence", "Representational neglect", "Ignoring half of an imagined scene (Logie 2005; Denis 2002; Peru & Zapparoli 1999)."], ["Evidence", "Shepard & Metzler (1971)", "8 participants, 1,600 pairs: RT linear with angle; depth = picture-plane rotation."], ["Evidence", "Jolicoeur & Kosslyn (1985b)", "Assistants told to expect a U-curve still found a linear scan effect: not expectancy."], ["Evidence", "Paivio (1978) mental clocks", "Similar hand angles (3:20 vs 7:25) slow; high-imagery people faster."], ["Evidence", "Shepard & Chipman (1970)", "Shape similarity of imagined US states \u2248 judgements from sketches."], ["Evidence", "Segal & Fusella (1970)", "Imagining a tree hurt detecting a visual arrow; imagining an oboe didn\u2019t."], ["Evidence", "Mast et al. (1999)", "Imagined lines distorted judgements of a real line\u2019s orientation."], ["Evidence", "Reed (1974)", "Only 14% found the parallelogram in a Star of David (55% overall) \u2192 propositional storage."], ["Evidence", "Kosslyn et al. (2001) PET", "Rotated by hand before \u2192 motor cortex during mental rotation; watched a motor \u2192 not."], ["Evidence", "Rotation & experience", "Deaf ASL signers excel; older people slower; training removes gender gap."], ["Bizarreness", "Bizarreness effect", "Bizarre sentences/pictures remembered better than common ones."], ["Bizarreness", "McDaniel & Einstein (1986)", "Mixed lists + imagery/vividness ratings \u2192 better recall of bizarre sentences."], ["Bizarreness", "Two imagery accounts", "More effort/transformations (Marshall et al., 1979) or more distinctive images."], ["Bizarreness", "Anderson & Buyer (1994)", "Imagery ability didn\u2019t predict the effect; low-vividness raters had a larger effect."], ["Bizarreness", "Logic of Besken & Mulligan", "Selectively disrupt visual imagery at encoding: if the effect relies on it, it should shrink."], ["Bizarreness", "DVN", "Dynamic visual noise: flickering squares; passive; disrupts imagery (eliminates the concreteness effect)."], ["Bizarreness", "Spatial tapping", "Tap 4 pegs in a diamond at 2/s, unseen; active visuospatial load."], ["Bizarreness", "Visual span task", "Keep a 5 \u00d7 6 checkerboard in mind during encoding; same/different test (.75 correct)."], ["Bizarreness", "Exp 1 surprise", "Auditory control showed no bizarreness effect \u2192 later sentences presented visually."], ["Bizarreness", "Exp 4 change", "Plausibility ratings instead of vividness: no imagery instructions; same result."], ["Bizarreness", "Bayes factors", "BF01 = 11.49 (access) and 13.86 (nouns): strong evidence the effect isn\u2019t smaller under distraction."], ["Bizarreness", "Vividness puzzle", "Bizarre rated less vivid and slower; distraction didn\u2019t lower ratings (RTs slower)."], ["Bizarreness", "Conclusion", "Little role for visual imagery; likely verbal/semantic processing."], ["Bizarreness", "Baddeley component presumed", "Visuo-spatial sketchpad (visual cache: DVN; inner scribe: tapping)."], ["In-depth", "Zwaan et al. (2002)", "Mismatching implied shape (folded wings) slowed picture verification \u2192 analog simulation."], ["In-depth", "Onomatopoeia", "Words whose sound resembles the referent: partly analog, unlike arbitrary symbols."], ["In-depth", "Computer metaphor", "Fits propositional representations: rule-based manipulation of abstract symbols."], ["In-depth", "20 vs 80 miles", "Identical maps but longer travel for \u201880\u2019: knowledge, not a visual copy, shapes mental travel."]];const MCQ=[["According to dual-code theory, a mental image of a river is:", ["an analog code", "a symbolic code", "a proposition", "an epiphenomenon"], 0, "Analog codes resemble what they represent."], ["Which statement best describes propositional theory?", ["Images are by-products; knowledge is stored as abstract meaning", "Knowledge is stored as words", "Knowledge is stored as exact copies of perceptions", "There are two independent codes"], 0, "Pylyshyn: images are epiphenomena; mentalese propositions."], ["In Brooks (1968), the visual task was slowest when participants responded by:", ["pointing", "speaking", "tapping", "writing"], 0, "Same system for task and response \u2192 interference."], ["Kosslyn (1975): answering questions about a rabbit was slowest when it was imagined next to:", ["an elephant", "a fly", "a fly-sized elephant", "nothing"], 0, "Next to an elephant the rabbit is small in the image."], ["In Kosslyn (1976), adults WITHOUT imagery instructions answered fastest about:", ["distinctive features (claws)", "large features (head)", "small features", "colours"], 0, "Propositional knowledge reflects associative strength, not size."], ["Kosslyn, Ball & Reiser (1978) found that scanning time:", ["increased linearly with distance", "was constant", "decreased with distance", "depended on object names only"], 0, "Evidence for analog spatial images."], ["Which study ruled out experimenter expectancy as the cause of the scanning effect?", ["Jolicoeur & Kosslyn (1985b)", "Reed (1974)", "Brooks (1968)", "Paivio (1969)"], 0, "Assistants expecting a U-shape still found a linear function."], ["Shepard & Metzler (1971) showed that depth rotations were:", ["as fast as picture-plane rotations", "much slower than picture-plane rotations", "impossible", "faster than 0\u00b0 pairs"], 0, "Both gave the same linear slope."], ["In representational neglect, a patient:", ["ignores half of an imagined scene", "cannot see half of the visual field", "cannot form any images", "cannot recognise faces"], 0, "It can occur without spatial (visual) neglect."], ["Segal & Fusella (1970) found that imagining a tree impaired detection of:", ["a faint visual arrow", "a faint sound", "both equally", "neither"], 0, "Interference is modality specific."], ["Reed (1974) found that only 14% of participants:", ["found a parallelogram in a mentally stored Star of David", "could rotate an image", "could scan a map", "recalled bizarre sentences"], 0, "Supports propositional (descriptive) storage."], ["Which finding supports the propositional side of the imagery debate?", ["Difficulty reinterpreting ambiguous figures from images", "Linear rotation times", "Linear scanning times", "Image-size effects"], 0, "Images seem to be stored already interpreted."], ["The bizarreness effect refers to:", ["better memory for bizarre than common sentences", "worse memory for bizarre sentences", "more vivid bizarre images", "faster reading of bizarre sentences"], 0, "E.g. McDaniel & Einstein (1986)."], ["Why did Besken & Mulligan switch from DVN to spatial tapping?", ["DVN required auditory sentences, and the auditory control showed no effect; tapping is also more active", "DVN was too difficult", "Tapping disrupts the phonological loop", "DVN eliminated the bizarreness effect"], 0, "Tapping lets sentences be read and actively loads visuospatial WM."], ["Which working-memory component did the distractor tasks target?", ["Visuo-spatial sketchpad", "Phonological loop", "Episodic buffer", "Long-term memory"], 0, "DVN: visual cache; tapping: spatial/inner scribe."], ["In Experiments 3 and 4, the visual span task:", ["lowered overall recall but not the bizarreness effect", "eliminated the bizarreness effect", "had no effect at all", "increased overall recall"], 0, "Main effect of group, no interaction."], ["A Bayes factor BF01 of 11.49 means:", ["strong evidence for the null hypothesis", "strong evidence for the imagery hypothesis", "an ambiguous result", "a significant interaction"], 0, "\u2265 3 favours the null."], ["Vividness ratings in Besken & Mulligan were:", ["lower for bizarre than common sentences", "higher for bizarre sentences", "equal for both", "only collected in Exp 4"], 0, "Bizarre images are harder to form (also slower)."], ["Zwaan et al. (2002): slower verification of a perched eagle after \u2018The ranger saw an eagle in the sky\u2019 supports:", ["perceptual/analog simulation", "a purely propositional code", "the phonological loop", "experimenter expectancy"], 0, "The implied shape was represented."], ["Imagining a fly-sized elephant next to a rabbit-sized ant, you see more detail of:", ["the ant", "the elephant", "both equally", "neither"], 0, "Image size, not real size, determines detail (functional equivalence)."], ["Which representation best fits the 20th-century computer metaphor?", ["Propositional", "Analog", "Depictive", "Onomatopoeic"], 0, "Rule-based manipulation of abstract symbols."], ["Deaf users of American Sign Language are especially good at:", ["rotating a scene by 180\u00b0", "scanning auditory images", "recognising faces", "detecting faint arrows"], 0, "They constantly rotate signs to their own perspective."], ["Which effect DOES disappear under dynamic visual noise, according to Besken & Mulligan?", ["The concreteness effect", "The bizarreness effect", "The serial position effect", "The Stroop effect"], 0, "So the two effects have different bases."]];const SEQ=["L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11", "L12", "L13", "L14", "L15", "L16", "L17", "L18", "L19", "L20", "L21", "L22", "L23", "L24", "L25", "L26", "L27", "oA1", "oA2", "oA3", "oA4", "oD1", "oD2", "oD3", "oD4", "iW", "iAB1", "iAB2", "iAB3", "iAB4", "iAB5", "iAB6", "iAB7", "iAB8", "iD1", "iD2", "iD3", "iD4", "iD5"];
